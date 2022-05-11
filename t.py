@@ -1,10 +1,19 @@
-import requests, threading, re, json, time
+import requests, threading, re, json, time, ctypes
+from colorama import init, Fore
+init()
 
 totalValues = None
 lock = threading.Lock()
+accountsLoaded = 0
+inventoryChecks = 0
+inventoryChanges = 0
 
 with open('config.json','r') as config:
     config = json.load(config)
+
+def commandTitle():
+    while True:
+        ctypes.windll.kernel32.SetConsoleTitleW(f'Accounts Loaded: {accountsLoaded} / Inventory Checks: {inventoryChecks} / Inventory Changes: {inventoryChanges}')
 
 def rolimons():
     global totalValues
@@ -27,6 +36,7 @@ def rolimons():
             continue
 
 threading.Thread(target=rolimons).start()
+threading.Thread(target=commandTitle).start()
 time.sleep(2)
 
 class Player:
@@ -39,19 +49,21 @@ class Player:
     def firstInventoryCheck(self):
         r = requests.get(f'https://inventory.roblox.com/v1/users/{self.userId}/assets/collectibles?sortOrder=Asc&limit=100').json()
         self.firstInventory = [f"{item['assetId']}:{item['userAssetId']}" for item in r['data']]
-        print(self.firstInventory)
 
     def mainInventoryCheck(self):
         r = requests.get(f'https://inventory.roblox.com/v1/users/{self.userId}/assets/collectibles?sortOrder=Asc&limit=100').json()
         self.secondInventory = [f"{item['assetId']}:{item['userAssetId']}" for item in r['data']]
-        print(self.secondInventory)
         self.compareInventories()
 
     def compareInventories(self):
+        global inventoryChanges, inventoryChecks
+        inventoryChecks += 1
         itemLost = [item for item in self.firstInventory if not item in self.secondInventory]
         itemGained = [item for item in self.secondInventory if not item in self.firstInventory]
         if itemLost != [] and itemGained != []:
+            inventoryChanges += 1
             self.calculateTrade(itemLost, itemGained)
+        else: print(f'{Fore.WHITE}[{Fore.RED}-{Fore.WHITE}] Inventory for {Fore.RED}{self.userName}{Fore.WHITE} has not changed')
 
     def calculateTrade(self, itemLost, itemGained):
         myValue = theirValue = 0
@@ -92,6 +104,7 @@ class Player:
                 }]
             }
         requests.post(config['discordWebhook'], json=data)
+        print(f'{Fore.WHITE}[{Fore.GREEN}+{Fore.WHITE}] Inventory for {Fore.GREEN}{self.userName}{Fore.WHITE} has changed')
         self.firstInventory = self.secondInventory
 
     def looping(self):
@@ -104,3 +117,4 @@ class Player:
 for userName in config['userNames']:
     c = Player(userName)
     threading.Thread(target=c.looping).start()
+    accountsLoaded += 1
