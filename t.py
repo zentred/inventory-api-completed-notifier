@@ -53,11 +53,11 @@ class Player:
     def mainInventoryCheck(self):
         while True:
             r = requests.get(f'https://inventory.roblox.com/v1/users/{self.userId}/assets/collectibles?sortOrder=Asc&limit=100').json()
-            if 'data' in r:
+            if 'data' in r: # checks if 'data' is in the response, if it's not in the response it's ratelimited
                 self.secondInventory = [f"{item['assetId']}:{item['userAssetId']}" for item in r['data']]
                 self.compareInventories()
                 break
-            else:
+            else: # retries every 60 seconds until there is no ratelimit
                 print(f'{Fore.WHITE}[{Fore.YELLOW}Error{Fore.WHITE}] API Response did not contain data (this may be due to using an Inbound or Outbound checker), retrying in {Fore.YELLOW}1 {Fore.WHITE}minute')
                 time.sleep(60)
 
