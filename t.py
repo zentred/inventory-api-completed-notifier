@@ -51,9 +51,15 @@ class Player:
         self.firstInventory = [f"{item['assetId']}:{item['userAssetId']}" for item in r['data']]
 
     def mainInventoryCheck(self):
-        r = requests.get(f'https://inventory.roblox.com/v1/users/{self.userId}/assets/collectibles?sortOrder=Asc&limit=100').json()
-        self.secondInventory = [f"{item['assetId']}:{item['userAssetId']}" for item in r['data']]
-        self.compareInventories()
+        while True:
+            r = requests.get(f'https://inventory.roblox.com/v1/users/{self.userId}/assets/collectibles?sortOrder=Asc&limit=100').json()
+            if 'data' in r:
+                self.secondInventory = [f"{item['assetId']}:{item['userAssetId']}" for item in r['data']]
+                self.compareInventories()
+                break
+            else:
+                print(f'{Fore.WHITE}[{Fore.YELLOW}Error{Fore.WHITE}] API Response did not contain data (this may be due to using an Inbound or Outbound checker), retrying in {Fore.YELLOW}1 {Fore.WHITE}minute')
+                time.sleep(60)
 
     def compareInventories(self):
         global inventoryChanges, inventoryChecks
