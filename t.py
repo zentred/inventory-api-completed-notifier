@@ -33,6 +33,7 @@ def rolimons():
             totalValues = dict(zip(items, data))
             time.sleep(600)
         except:
+            time.sleep(60)
             continue
 
 threading.Thread(target=rolimons).start()
